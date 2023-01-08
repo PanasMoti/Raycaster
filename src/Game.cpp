@@ -183,9 +183,9 @@ void Game::Rays() {
             float s = (side == 1) ? 0.5f : 1.0f;
             img::Color color = (*wall_test)(texX,texY)*s;
             renderWindow->set_pixel(x,y,color);
-            renderWindow->set_pixel(x+1,y,color);
-            renderWindow->set_pixel(x+1,y+1,color);
-            renderWindow->set_pixel(x,y+1,color);
+            // renderWindow->set_pixel(x+1,y,color);
+            // renderWindow->set_pixel(x+1,y+1,color);
+            // renderWindow->set_pixel(x,y+1,color);
         }
 
     }
