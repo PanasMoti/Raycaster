@@ -8,9 +8,9 @@ Game::Game(const char *t, int w, int h) :renderWindow(nullptr),player(nullptr){
     renderWindow = new RenderWindow(t,w,h);
     player = new Player();
     clock = new Clock();
-    wall_test = new img::Image("assets/wall_test.png");
-    floor_test = new img::Image("assets/floor_test.png");
-    ceil_test = new img::Image("assets/ceil_test.png");
+    wall_test = new img::Image("assets/test/wall_test.png");
+    floor_test = new img::Image("assets/test/floor_test.png");
+    ceil_test = new img::Image("assets/test/ceil_test.png");
 }
 
 Game::~Game() {
@@ -31,7 +31,7 @@ void Game::MainLoop() {
             if(sdlEvent.type == SDL_KEYUP) this->KeyUp(sdlEvent);
         }
         clock->Update();
-        renderWindow->clean_screen(img::Color("#acacac"));
+        renderWindow->clean_screen(img::Color("#acdcdc"));
         this->Update(clock->DeltaTime());
         this->Draw3D();
         renderWindow->display();
