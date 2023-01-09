@@ -8,7 +8,7 @@
 
 #include <SDL2/SDL_render.h>
 #include <cstdint>
-#include <ostream>
+#include <string>
 #define TRANSPARENT_R 163
 #define TRANSPARENT_G 160
 #define TRANSPARENT_B 0
@@ -65,13 +65,10 @@ namespace img {
         uint8_t& operator[](std::size_t i);
 
 
-        friend std::ostream& operator<<(std::ostream&,const Color&);
 
 
         ///@brief convert the rgb to hex value integer
         explicit operator uint32_t() const;
-        ///@brief convert the rgb to hex string
-        explicit operator std::string() const;
     };
 
     static void setRenderColor(SDL_Renderer *sdlRenderer, const img::Color &color) {
