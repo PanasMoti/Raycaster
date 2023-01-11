@@ -8,7 +8,7 @@ RenderWindow::RenderWindow(const char *t, int w, int h) : win(nullptr),ren(nullp
     this->title = t;
     this->width = w;
     this->height = h;
-    win = SDL_CreateWindow(t,SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,w,h,SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
+    win = SDL_CreateWindow(t,SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,w,h,SDL_WINDOW_SHOWN);
     ren = SDL_CreateRenderer(win,-1, SDL_RENDERER_ACCELERATED);
     buffer = SDL_CreateRGBSurface(0,RESOLUTION_WIDTH,RESOLUTION_HEIGHT,32,0,0,0,0);
     SDL_LockSurface(buffer);
@@ -16,12 +16,15 @@ RenderWindow::RenderWindow(const char *t, int w, int h) : win(nullptr),ren(nullp
     SDL_UnlockSurface(buffer);
     SDL_SetSurfaceRLE(buffer, true);
 
-
     ShouldClose = false;
     context = SDL_GL_CreateContext(win);
     SDL_GL_MakeCurrent(win,context);
+    SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, "best" );
+    SDL_SetHint(SDL_HINT_RENDER_VSYNC,"1");
+    SDL_SetHint(SDL_HINT_RENDER_DRIVER,"direct3d");
 
-
+    Tbuffer = SDL_CreateTexture(ren,buffer->format->format,SDL_TEXTUREACCESS_TARGET,RESOLUTION_WIDTH,RESOLUTION_HEIGHT);
+   
 }
 
 
@@ -29,21 +32,24 @@ RenderWindow::~RenderWindow() {
     SDL_DestroyRenderer(ren);
     SDL_DestroyWindow(win);
     SDL_FreeSurface(buffer);
+    SDL_DestroyTexture(Tbuffer);
+}
+
+void RenderWindow::updateBuffer() {
+    SDL_UpdateTexture(Tbuffer,nullptr,buffer->pixels,buffer->pitch);
+    SDL_RenderCopy(ren,Tbuffer,nullptr,nullptr);
 }
 
 void RenderWindow::clean_screen(const img::Color &bg) {
-    SDL_RenderClear(ren);
+    // SDL_RenderClear(ren);
     SDL_LockSurface(buffer);
     SDL_memset4(buffer->pixels,uint32_t(bg),buffer->h*buffer->pitch/4);
     SDL_UnlockSurface(buffer);
 }
 
 void RenderWindow::display() {
-    SDL_Texture* temp = SDL_CreateTextureFromSurface(ren,buffer);
-    SDL_RenderCopy(ren,temp, nullptr, nullptr);
-    SDL_DestroyTexture(temp);
+    updateBuffer();
     SDL_RenderPresent(ren);
-
 }
 
 
@@ -77,7 +83,17 @@ void RenderWindow::setWindowTitle(const std::string & ptitle) {
     title = ptitle;
     SDL_SetWindowTitle(win,title.c_str());
 }
+void RenderWindow::set_rect(int x0,int y0,int x1,int y1,const img::Color& c) {
+    SDL_Rect r;
+    r.x = x0; r.y = y0; r.w = x1-x0; r.h = y1-y0;
+    SDL_FillRect(buffer,&r,uint32_t(c));
+}
 
+void RenderWindow::vertLine(int x,int y0,int y1,const img::Color& c) {
+    SDL_Rect r;
+    r.x = x; r.y = y0; r.h = y1-y0; r.w = 1;
+    SDL_FillRect(buffer,&r,uint32_t(c));
+}
 void RenderWindow::lockBuffer() {
     SDL_LockSurface(buffer);
 

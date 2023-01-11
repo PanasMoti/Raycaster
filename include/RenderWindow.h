@@ -8,10 +8,9 @@
 #include <iostream>
 #include "Color.h"
 #include <GL/glut.h>
-#define res 3
-
-#define RESOLUTION_WIDTH 160*res
-#define RESOLUTION_HEIGHT 120*res
+#define res 2
+#define RESOLUTION_WIDTH 256*res
+#define RESOLUTION_HEIGHT 144*res
 
 class RenderWindow {
 public:
@@ -28,10 +27,14 @@ public:
     void setWindowTitle(const std::string &ptitle);
     void lockBuffer();
     void unlockBuffer();
+    void updateBuffer();
+    void set_rect(int x0,int y0,int x1,int y1,const img::Color& c);
+    void vertLine(int x,int y0,int y1,const img::Color& c);
 private:
     SDL_Renderer* ren;
     SDL_Window* win;
     SDL_Surface* buffer;
+    SDL_Texture* Tbuffer;
     SDL_GLContext context;
     std::string title;
     int height,width;
