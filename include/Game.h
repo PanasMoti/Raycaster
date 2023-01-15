@@ -61,6 +61,7 @@ private:
     img::Image* wall_test;
     img::Image* floor_test;
     img::Image* ceil_test;
+    int render_dist;
 };
 
 

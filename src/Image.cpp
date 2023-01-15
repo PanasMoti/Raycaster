@@ -42,9 +42,16 @@ namespace img {
     void Image::NotFound() {
         this->width = 4;
         this->height = 4;
+        Color c1("#000000");
+        Color c2("#ff00ff");
         for(int i = 0; i < height; i++) {
             for(int j = 0; j < width; j++) {
-                pixels.push_back(Color(!((i+j)%2) ? "#000000" : "#ff00ff"));
+                if((i+j)%2) {
+                    pixels.push_back(c1);
+                }
+                else {
+                    pixels.push_back(c2);
+                }
             }
         }
 
