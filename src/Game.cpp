@@ -335,6 +335,8 @@ void Game::sortSprites(int amount)
 
 void Game::Sprites()
 {
+    const float far_dist = ((mapHeight + mapWidth) / 2) * 0.3 * render_dist;
+    bool in_render_dist = true;
     // SPRITE CASTING
     // sort sprites from far to close
     float posX = player->pos.x;
@@ -357,56 +359,63 @@ void Game::Sprites()
     {
         // translate sprite position to relative to camera
         float2 spriteP = sprites[spriteOrder[i]]->pos - player->pos;
-        // transform sprite with the inverse camera matrix
-        //  [ planeX   dirX ] -1                                       [ dirY      -dirX ]
-        //  [               ]       =  1/(planeX*dirY-dirX*planeY) *   [                 ]
-        //  [ planeY   dirY ]                                          [ -planeY  planeX ]
-
-        float invDet = 1.0 / (planeX * dirY - dirX * planeY); // required for correct matrix multiplication
-
-        float transformX = invDet * (dirY * spriteP.x - dirX * spriteP.y);
-        float transformY = invDet * (-planeY * spriteP.x + planeX * spriteP.y); // this is actually the depth inside the screen, that what Z is in 3D
-
-        int spriteScreenX = int((w / 2) * (1 + transformX / transformY));
-
-        // calculate height of the sprite on screen
-        int spriteHeight = abs(int(h / (transformY))); // using 'transformY' instead of the real distance prevents fisheye
-        // calculate lowest and highest pixel to fill in current stripe
-        int drawStartY = -spriteHeight / 2 + h / 2;
-        if (drawStartY < 0)
-            drawStartY = 0;
-        int drawEndY = spriteHeight / 2 + h / 2;
-        if (drawEndY >= h)
-            drawEndY = h - 1;
-
-        // calculate width of the sprite
-        int spriteWidth = abs(int(h / (transformY)));
-        int drawStartX = -spriteWidth / 2 + spriteScreenX;
-        if (drawStartX < 0)
-            drawStartX = 0;
-        int drawEndX = spriteWidth / 2 + spriteScreenX;
-        if (drawEndX >= w)
-            drawEndX = w - 1;
-
-        // loop through every vertical stripe of the sprite on screen
-        int texWidth = sprites[i]->texture.getWidth();
-        int texHeight = sprites[i]->texture.getHeight();
-        for (int stripe = drawStartX; stripe < drawEndX; stripe++)
+        in_render_dist = spriteDistance[i] <= far_dist;
+        if (in_render_dist)
         {
-            int texX = int(256 * (stripe - (-spriteWidth / 2 + spriteScreenX)) * texWidth / spriteWidth) / 256;
-            // the conditions in the if are:
-            // 1) it's in front of camera plane so you don't see things behind you
-            // 2) it's on the screen (left)
-            // 3) it's on the screen (right)
-            // 4) ZBuffer, with perpendicular distance
-            if (transformY > 0 && stripe > 0 && stripe < w && transformY < ZBuffer[stripe])
+            // transform sprite with the inverse camera matrix
+            //  [ planeX   dirX ] -1                                       [ dirY      -dirX ]
+            //  [               ]       =  1/(planeX*dirY-dirX*planeY) *   [                 ]
+            //  [ planeY   dirY ]                                          [ -planeY  planeX ]
+
+            float invDet = 1.0 / (planeX * dirY - dirX * planeY); // required for correct matrix multiplication
+
+            float transformX = invDet * (dirY * spriteP.x - dirX * spriteP.y);
+            float transformY = invDet * (-planeY * spriteP.x + planeX * spriteP.y); // this is actually the depth inside the screen, that what Z is in 3D
+
+            int spriteScreenX = int((w / 2) * (1 + transformX / transformY));
+
+            // calculate height of the sprite on screen
+            int spriteHeight = abs(int(h / (transformY))); // using 'transformY' instead of the real distance prevents fisheye
+            // calculate lowest and highest pixel to fill in current stripe
+            int drawStartY = -spriteHeight / 2 + h / 2;
+            if (drawStartY < 0)
+                drawStartY = 0;
+            int drawEndY = spriteHeight / 2 + h / 2;
+            if (drawEndY >= h)
+                drawEndY = h - 1;
+
+            // calculate width of the sprite
+            int spriteWidth = abs(int(h / (transformY)));
+            int drawStartX = -spriteWidth / 2 + spriteScreenX;
+            if (drawStartX < 0)
+                drawStartX = 0;
+            int drawEndX = spriteWidth / 2 + spriteScreenX;
+            if (drawEndX >= w)
+                drawEndX = w - 1;
+            
+            float s = 2.0f / (1 + spriteDistance[i] * spriteDistance[i]);
+            s = SDL_clamp(s, 0.0f, 1.0f);
+
+            // loop through every vertical stripe of the sprite on screen
+            int texWidth = sprites[i]->texture.getWidth();
+            int texHeight = sprites[i]->texture.getHeight();
+            for (int stripe = drawStartX; stripe < drawEndX; stripe++)
             {
-                for (int y = drawStartY; y < drawEndY; y++) // for every pixel of the current stripe
+                int texX = int(256 * (stripe - (-spriteWidth / 2 + spriteScreenX)) * texWidth / spriteWidth) / 256;
+                // the conditions in the if are:
+                // 1) it's in front of camera plane so you don't see things behind you
+                // 2) it's on the screen (left)
+                // 3) it's on the screen (right)
+                // 4) ZBuffer, with perpendicular distance
+                if (transformY > 0 && stripe > 0 && stripe < w && transformY < ZBuffer[stripe])
                 {
-                    int d = (y)*256 - h * 128 + spriteHeight * 128; // 256 and 128 factors to avoid floats
-                    int texY = ((d * texHeight) / spriteHeight) / 256;
-                    img::Color c = sprites[spriteOrder[i]]->texture(texX,texY);
-                    renderWindow->set_pixel(stripe,y,c);
+                    for (int y = drawStartY; y < drawEndY; y++) // for every pixel of the current stripe
+                    {
+                        int d = (y)*256 - h * 128 + spriteHeight * 128; // 256 and 128 factors to avoid floats
+                        int texY = ((d * texHeight) / spriteHeight) / 256;
+                        img::Color c = sprites[spriteOrder[i]]->texture(texX, texY);
+                        renderWindow->set_pixel(stripe, y, c*s);
+                    }
                 }
             }
         }
