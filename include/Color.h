@@ -9,8 +9,8 @@
 #include <SDL2/SDL_render.h>
 #include <cstdint>
 #include <string>
-#define TRANSPARENT_R 163
-#define TRANSPARENT_G 160
+#define TRANSPARENT_R 0
+#define TRANSPARENT_G 0
 #define TRANSPARENT_B 0
 namespace img {
 
@@ -39,7 +39,7 @@ namespace img {
         );
         /// @brief bool operator overloading, since we dont have an alpha channel in our struct we will define one very
         /// @brief specific color to be @a "transparent"
-        /// @details our @a "transparent" color will be @b #a3a000
+        /// @details our @a "transparent" color will be @b #000000
         /// @returns @b true if the color is @b not  @a "transparent" \n@b false otherwise
         explicit operator bool() const;
 

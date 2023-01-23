@@ -3,16 +3,48 @@
 //
 
 #include "Game.h"
+#include <algorithm>
 
 Game::Game(const char *t, int w, int h) : renderWindow(nullptr), player(nullptr)
 {
     renderWindow = new RenderWindow(t, w, h);
     player = new Player();
     clock = new Clock();
-    wall_test = new img::Image("assets/wall_.png");
-    floor_test = new img::Image("assets/floor_test.png");
-    ceil_test = new img::Image("assets/ceil_test.png");
+    wall_test = img::Image("assets/wall_.png");
+    floor_test = img::Image("assets/floor_.png");
+    // ceil_test = img::Image("assets/ceil_test.png");
+    sprite_tex[0] = img::Image("assets/Sprites/barrel.png");
+    sprite_tex[1] = img::Image("assets/Sprites/pillar.png");
+    sprite_tex[2] = img::Image("assets/Sprites/greenlight.png");
+    for (int i = 0; i < w; i++)
+        ZBuffer.push_back(0);
     render_dist = 3;
+    sprites = {
+        new img::Sprite(20.5, 11.5, sprite_tex[2]), // green light in front of playerstart
+        // green lights in every room
+        new img::Sprite(18.5, 4.5, sprite_tex[2]),
+        new img::Sprite(10.0, 4.5, sprite_tex[2]),
+        new img::Sprite(10.0, 12.5, sprite_tex[2]),
+        new img::Sprite(3.5, 6.5, sprite_tex[2]),
+        new img::Sprite(3.5, 20.5, sprite_tex[2]),
+        new img::Sprite(3.5, 14.5, sprite_tex[2]),
+        new img::Sprite(14.5, 20.5, sprite_tex[2]),
+
+        // row of pillars in front of wall: fisheye test
+        new img::Sprite(18.5, 10.5, sprite_tex[1]),
+        new img::Sprite(18.5, 11.5, sprite_tex[1]),
+        new img::Sprite(18.5, 12.5, sprite_tex[1]),
+
+        // some barrels accross the map
+        new img::Sprite(21.5, 1.5, sprite_tex[0]),
+        new img::Sprite(15.5, 1.5, sprite_tex[0]),
+        new img::Sprite(16.0, 1.8, sprite_tex[0]),
+        new img::Sprite(16.2, 1.2, sprite_tex[0]),
+        new img::Sprite(3.5, 2.5, sprite_tex[0]),
+        new img::Sprite(9.5, 15.5, sprite_tex[0]),
+        new img::Sprite(10.0, 15.1, sprite_tex[0]),
+        new img::Sprite(10.5, 15.8, sprite_tex[0]),
+    };
 }
 
 Game::~Game()
@@ -20,9 +52,10 @@ Game::~Game()
     delete renderWindow;
     delete clock;
     delete player;
-    delete wall_test;
-    delete floor_test;
-    delete ceil_test;
+    for (int i = 0; i < numSprites; i++)
+    {
+        delete sprites[i];
+    }
 }
 
 void Game::MainLoop()
@@ -107,6 +140,7 @@ void Game::Draw3D()
 {
     this->Floors();
     this->Rays();
+    this->Sprites();
 }
 
 void Game::Rays()
@@ -189,8 +223,8 @@ void Game::Rays()
         // only render if its in the render distance
         if (in_render_dist)
         {
-            int texWidth = (int)wall_test->getWidth();
-            int texHeight = (int)wall_test->getHeight();
+            int texWidth = (int)wall_test.getWidth();
+            int texHeight = (int)wall_test.getHeight();
             float wallX;
             if (side == 0)
                 wallX = player->pos.y + perpWallDist * rayDir.y;
@@ -212,10 +246,11 @@ void Game::Rays()
                 // Cast the texture coordinate to integer, and mask with (texHeight - 1) in case of overflow
                 int texY = (int)texPos & (texHeight - 1);
                 texPos += stepT;
-                float s = 2.0f/(1+perpWallDist*perpWallDist);
-                s = SDL_clamp(s,0.0f,1.0f);
-                img::Color color = (*wall_test)(texX, texY) * s;
-                if(s < 0.15f) color = color.grayScale();
+                float s = 2.0f / (1 + perpWallDist * perpWallDist);
+                s = SDL_clamp(s, 0.0f, 1.0f);
+                img::Color color = (wall_test)(texX, texY) * s;
+                if (s < 0.15f)
+                    color = color.grayScale();
                 renderWindow->set_pixel(x, y, color);
             }
         }
@@ -224,6 +259,7 @@ void Game::Rays()
         //     renderWindow->vertLine(x,drawStart,drawEnd,c);
 
         // }
+        ZBuffer[x] = perpWallDist;
     }
 }
 
@@ -260,8 +296,8 @@ void Game::Floors()
 
             for (int x = 0; x < screenWidth; x++)
             {
-                int texWidth = floor_test->getWidth();
-                int texHeight = floor_test->getHeight();
+                int texWidth = floor_test.getWidth();
+                int texHeight = floor_test.getHeight();
                 //? the cell coord is simply got from the integer parts of floorX and floorY
                 int cellX = (int)floorP.x;
                 int cellY = (int)floorP.y;
@@ -271,10 +307,107 @@ void Game::Floors()
                 floorP += floorStep;
                 //? choose texture and draw the pixel
                 img::Color color;
-                float s = SDL_clamp(1.0f/(rowDistance*rowDistance+0.1),0.0f,1.0f);
-                color = (*floor_test)[texWidth * ty + tx];
-                color = color * 0.7*s; //? making the floors darker
+                float s = SDL_clamp(1.0f / (rowDistance * rowDistance + 0.1), 0.0f, 1.0f);
+                color = (floor_test)[texWidth * ty + tx];
+                color = color * 0.7 * s; //? making the floors darker
                 renderWindow->set_pixel(x, y, color);
+            }
+        }
+    }
+}
+
+void Game::sortSprites(int amount)
+{
+    std::vector<std::pair<double, int>> sprites_(amount);
+    for (int i = 0; i < amount; i++)
+    {
+        sprites_[i].first = spriteDistance[i];
+        sprites_[i].second = spriteOrder[i];
+    }
+    std::sort(sprites_.begin(), sprites_.end());
+    // restore in reverse order to go from farthest to nearest
+    for (int i = 0; i < amount; i++)
+    {
+        spriteDistance[i] = sprites_[amount - i - 1].first;
+        spriteOrder[i] = sprites_[amount - i - 1].second;
+    }
+}
+
+void Game::Sprites()
+{
+    // SPRITE CASTING
+    // sort sprites from far to close
+    float posX = player->pos.x;
+    float posY = player->pos.y;
+    float dirX = player->dir.x;
+    float dirY = player->dir.y;
+    float planeX = player->plane.x;
+    float planeY = player->plane.y;
+    int w = RESOLUTION_WIDTH;
+    int h = RESOLUTION_HEIGHT;
+    for (int i = 0; i < numSprites; i++)
+    {
+        spriteOrder[i] = i;
+        spriteDistance[i] = ((posX - sprites[i]->pos.x) * (posX - sprites[i]->pos.x) + (posY - sprites[i]->pos.y) * (posY - sprites[i]->pos.y)); // sqrt not taken, unneeded
+    }
+    sortSprites(numSprites);
+
+    // after sorting the sprites, do the projection and draw them
+    for (int i = 0; i < numSprites; i++)
+    {
+        // translate sprite position to relative to camera
+        float2 spriteP = sprites[spriteOrder[i]]->pos - player->pos;
+        // transform sprite with the inverse camera matrix
+        //  [ planeX   dirX ] -1                                       [ dirY      -dirX ]
+        //  [               ]       =  1/(planeX*dirY-dirX*planeY) *   [                 ]
+        //  [ planeY   dirY ]                                          [ -planeY  planeX ]
+
+        float invDet = 1.0 / (planeX * dirY - dirX * planeY); // required for correct matrix multiplication
+
+        float transformX = invDet * (dirY * spriteP.x - dirX * spriteP.y);
+        float transformY = invDet * (-planeY * spriteP.x + planeX * spriteP.y); // this is actually the depth inside the screen, that what Z is in 3D
+
+        int spriteScreenX = int((w / 2) * (1 + transformX / transformY));
+
+        // calculate height of the sprite on screen
+        int spriteHeight = abs(int(h / (transformY))); // using 'transformY' instead of the real distance prevents fisheye
+        // calculate lowest and highest pixel to fill in current stripe
+        int drawStartY = -spriteHeight / 2 + h / 2;
+        if (drawStartY < 0)
+            drawStartY = 0;
+        int drawEndY = spriteHeight / 2 + h / 2;
+        if (drawEndY >= h)
+            drawEndY = h - 1;
+
+        // calculate width of the sprite
+        int spriteWidth = abs(int(h / (transformY)));
+        int drawStartX = -spriteWidth / 2 + spriteScreenX;
+        if (drawStartX < 0)
+            drawStartX = 0;
+        int drawEndX = spriteWidth / 2 + spriteScreenX;
+        if (drawEndX >= w)
+            drawEndX = w - 1;
+
+        // loop through every vertical stripe of the sprite on screen
+        int texWidth = sprites[i]->texture.getWidth();
+        int texHeight = sprites[i]->texture.getHeight();
+        for (int stripe = drawStartX; stripe < drawEndX; stripe++)
+        {
+            int texX = int(256 * (stripe - (-spriteWidth / 2 + spriteScreenX)) * texWidth / spriteWidth) / 256;
+            // the conditions in the if are:
+            // 1) it's in front of camera plane so you don't see things behind you
+            // 2) it's on the screen (left)
+            // 3) it's on the screen (right)
+            // 4) ZBuffer, with perpendicular distance
+            if (transformY > 0 && stripe > 0 && stripe < w && transformY < ZBuffer[stripe])
+            {
+                for (int y = drawStartY; y < drawEndY; y++) // for every pixel of the current stripe
+                {
+                    int d = (y)*256 - h * 128 + spriteHeight * 128; // 256 and 128 factors to avoid floats
+                    int texY = ((d * texHeight) / spriteHeight) / 256;
+                    img::Color c = sprites[spriteOrder[i]]->texture(texX,texY);
+                    renderWindow->set_pixel(stripe,y,c);
+                }
             }
         }
     }

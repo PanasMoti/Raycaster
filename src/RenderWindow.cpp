@@ -36,6 +36,7 @@ RenderWindow::~RenderWindow() {
 }
 
 void RenderWindow::updateBuffer() {
+    
     SDL_UpdateTexture(Tbuffer,nullptr,buffer->pixels,buffer->pitch);
     SDL_RenderCopy(ren,Tbuffer,nullptr,nullptr);
 }

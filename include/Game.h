@@ -10,6 +10,8 @@
 #include "Keyboard.h"
 #include "Image.h"
 #include <GL/glut.h>
+#include "Sprite.h"
+#define numSprites 19
 
 #define mapWidth 24
 #define mapHeight 24
@@ -52,15 +54,22 @@ public:
     void Draw3D();
     void Rays();
     void Floors();
+    void Sprites();
 
 private:
     RenderWindow* renderWindow;
     Player* player;
     Clock* clock;
     Keyboard keyboard;
-    img::Image* wall_test;
-    img::Image* floor_test;
-    img::Image* ceil_test;
+    img::Image wall_test;
+    img::Image floor_test;
+    img::Image ceil_test;
+    std::array<img::Image,3> sprite_tex;
+    std::array<img::Sprite*,numSprites> sprites;
+    std::vector<float> ZBuffer;
+    std::array<int,numSprites> spriteOrder;
+    std::array<float,numSprites> spriteDistance;
+    void sortSprites(int amount);
     int render_dist;
 };
 
