@@ -15,6 +15,7 @@ namespace img {
 
     class Image {
     public:
+        Image() = default;
         explicit Image(const std::string&);
         [[nodiscard]] unsigned getWidth() const; [[nodiscard]] unsigned getHeight() const;
         Color& operator[](std::size_t);

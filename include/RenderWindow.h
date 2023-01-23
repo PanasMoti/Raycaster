@@ -8,7 +8,7 @@
 #include <iostream>
 #include "Color.h"
 #include <GL/glut.h>
-#define res 2
+#define res 1
 #define RESOLUTION_WIDTH 256*res
 #define RESOLUTION_HEIGHT 144*res
 

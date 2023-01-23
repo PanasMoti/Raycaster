@@ -8,7 +8,7 @@
 using namespace linalg::aliases;
 
 struct Player {
-    float2 pos = {2.0f,3.0f};
+    float2 pos = {22.0f,11.5f};
     float2 dir = {-1.0f,0.0f};
     float2 plane = {0.0f,0.66f};
     float2 speed = {5.0f,3.0f};

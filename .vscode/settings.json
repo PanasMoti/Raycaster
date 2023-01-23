@@ -59,5 +59,17 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "valarray": "cpp"
-    }
+    },
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "c:\\Users\\elias\\Documents\\Classwork\\CS\\finalproject\\raycaster\\Raycaster\\bin",
+            "binaryPath": "c:\\Users\\elias\\Documents\\Classwork\\CS\\finalproject\\raycaster\\Raycaster\\bin\\RayCaster.exe",
+            "binaryArgs": []
+        },
+        {
+            "cwd": "c:\\Users\\elias\\Documents\\Classwork\\CS\\finalproject\\raycaster\\Raycaster\\bin\\debug",
+            "binaryPath": "c:\\Users\\elias\\Documents\\Classwork\\CS\\finalproject\\raycaster\\Raycaster\\bin\\debug\\RayCaster.exe",
+            "binaryArgs": []
+        }
+    ]
 }

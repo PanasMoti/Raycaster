@@ -42,7 +42,7 @@ namespace img {
     void Image::NotFound() {
         this->width = 4;
         this->height = 4;
-        Color c1("#000000");
+        Color c1("#000001");
         Color c2("#ff00ff");
         for(int i = 0; i < height; i++) {
             for(int j = 0; j < width; j++) {
